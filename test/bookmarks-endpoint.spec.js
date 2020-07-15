@@ -248,3 +248,58 @@ describe('Bookmarks Endpoints', () => {
             .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
             .expect(400, `'rating' must be a number between 0 and 5`)
         })
+
+        it(`responds with 400 invalid 'url' if not a valid URL`, () => {
+            const newBookmarkInvalidUrl = {
+              title: 'test-title',
+              url: 'htp://invalid-url',
+              rating: 1,
+            }
+            return supertest(app)
+              .post(`/bookmarks`)
+              .send(newBookmarkInvalidUrl)
+              .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+              .expect(400, `'url' must be a valid URL`)
+          })
+      
+          it('adds a new bookmark to the store', () => {
+            const newBookmark = {
+              title: 'test-title',
+              url: 'https://test.com',
+              description: 'test description',
+              rating: 1,
+            }
+            return supertest(app)
+              .post(`/bookmarks`)
+              .send(newBookmark)
+              .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+              .expect(201)
+              .expect(res => {
+                expect(res.body.title).to.eql(newBookmark.title)
+                expect(res.body.url).to.eql(newBookmark.url)
+                expect(res.body.description).to.eql(newBookmark.description)
+                expect(res.body.rating).to.eql(newBookmark.rating)
+                expect(res.body).to.have.property('id')
+              })
+              .then(res =>
+                supertest(app)
+                  .get(`/bookmarks/${res.body.id}`)
+                  .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+                  .expect(res.body)
+              )
+          })
+      
+          it('removes XSS attack content from response', () => {
+            const { maliciousBookmark, expectedBookmark } = fixtures.makeMaliciousBookmark()
+            return supertest(app)
+              .post(`/bookmarks`)
+              .send(maliciousBookmark)
+              .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+              .expect(201)
+              .expect(res => {
+                expect(res.body.title).to.eql(expectedBookmark.title)
+                expect(res.body.description).to.eql(expectedBookmark.description)
+              })
+          })
+        })
+      })
