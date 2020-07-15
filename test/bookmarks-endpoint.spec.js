@@ -82,3 +82,57 @@ describe('Bookmarks Endpoints', () => {
             .expect(200, testBookmarks)
         })
       })
+
+      context(`Given an XSS attack bookmark`, () => {
+        const { maliciousBookmark, expectedBookmark } = fixtures.makeMaliciousBookmark()
+  
+        beforeEach('insert malicious bookmark', () => {
+          return db
+            .into('bookmarks')
+            .insert([maliciousBookmark])
+        })
+  
+        it('removes XSS attack content', () => {
+          return supertest(app)
+            .get(`/bookmarks`)
+            .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+            .expect(200)
+            .expect(res => {
+              expect(res.body[0].title).to.eql(expectedBookmark.title)
+              expect(res.body[0].description).to.eql(expectedBookmark.description)
+            })
+        })
+      })
+    })
+  
+    describe('GET /bookmarks/:id', () => {
+      context(`Given no bookmarks`, () => {
+        it(`responds 404 whe bookmark doesn't exist`, () => {
+          return supertest(app)
+            .get(`/bookmarks/123`)
+            .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+            .expect(404, {
+              error: { message: `Bookmark Not Found` }
+            })
+        })
+      })
+  
+      context('Given there are bookmarks in the database', () => {
+        const testBookmarks = fixtures.makeBookmarksArray()
+  
+        beforeEach('insert bookmarks', () => {
+          return db
+            .into('bookmarks')
+            .insert(testBookmarks)
+        })
+  
+        it('responds with 200 and the specified bookmark', () => {
+          const bookmarkId = 2
+          const expectedBookmark = testBookmarks[bookmarkId - 1]
+          return supertest(app)
+            .get(`/bookmarks/${bookmarkId}`)
+            .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+            .expect(200, expectedBookmark)
+        })
+      })
+  
