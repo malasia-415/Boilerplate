@@ -1,4 +1,4 @@
-function makeBookmarksArrayfunction makeBookmarksArray() {
+function makeBookmarksArray() {
     return [
       {
         id: 1,
