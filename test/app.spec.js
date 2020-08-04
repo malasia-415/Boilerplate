@@ -59,3 +59,72 @@ describe('Bookmarks Endpoints', () => {
         .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
         .expect(200, secondBookmark)
     })
+
+    it(`returns 404 whe bookmark doesn't exist`, () => {
+      return supertest(app)
+        .get(`/bookmarks/doesnt-exist`)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(404, 'Bookmark Not Found')
+    })
+  })
+
+  describe('DELETE /bookmarks/:id', () => {
+    it('removes the bookmark by ID from the store', () => {
+      const secondBookmark = store.bookmarks[1]
+      const expectedBookmarks = store.bookmarks.filter(s => s.id !== secondBookmark.id)
+      return supertest(app)
+        .delete(`/bookmarks/${secondBookmark.id}`)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(204)
+        .then(() => {
+          expect(store.bookmarks).to.eql(expectedBookmarks)
+        })
+    })
+
+    it(`returns 404 whe bookmark doesn't exist`, () => {
+      return supertest(app)
+        .delete(`/bookmarks/doesnt-exist`)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(404, 'Bookmark Not Found')
+    })
+  })
+  
+  describe('POST /bookmarks', () => {
+    it(`responds with 400 missing 'title' if not supplied`, () => {
+      const newBookmarkMissingTitle = {
+        // title: 'test-title',
+        url: 'https://test.com',
+        rating: 1,
+      }
+      return supertest(app)
+        .post(`/bookmarks`)
+        .send(newBookmarkMissingTitle)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(400, `'title' is required`)
+    })
+
+    it(`responds with 400 missing 'url' if not supplied`, () => {
+      const newBookmarkMissingUrl = {
+        title: 'test-title',
+        // url: 'https://test.com',
+        rating: 1,
+      }
+      return supertest(app)
+        .post(`/bookmarks`)
+        .send(newBookmarkMissingUrl)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(400, `'url' is required`)
+    })
+
+    it(`responds with 400 missing 'rating' if not supplied`, () => {
+      const newBookmarkMissingRating = {
+        title: 'test-title',
+        url: 'https://test.com',
+        // rating: 1,
+      }
+      return supertest(app)
+        .post(`/bookmarks`)
+        .send(newBookmarkMissingRating)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(400, `'rating' is required`)
+    })
