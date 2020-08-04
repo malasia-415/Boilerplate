@@ -128,3 +128,55 @@ describe('Bookmarks Endpoints', () => {
         .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
         .expect(400, `'rating' is required`)
     })
+
+    it(`responds with 400 invalid 'rating' if not between 0 and 5`, () => {
+      const newBookmarkInvalidRating = {
+        title: 'test-title',
+        url: 'https://test.com',
+        rating: 'invalid',
+      }
+      return supertest(app)
+        .post(`/bookmarks`)
+        .send(newBookmarkInvalidRating)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(400, `'rating' must be a number between 0 and 5`)
+    })
+
+    it(`responds with 400 invalid 'url' if not a valid URL`, () => {
+      const newBookmarkInvalidUrl = {
+        title: 'test-title',
+        url: 'htp://invalid-url',
+        rating: 1,
+      }
+      return supertest(app)
+        .post(`/bookmarks`)
+        .send(newBookmarkInvalidUrl)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(400, `'url' must be a valid URL`)
+    })
+
+    it('adds a new bookmark to the store', () => {
+      const newBookmark = {
+        title: 'test-title',
+        url: 'https://test.com',
+        description: 'test description',
+        rating: 1,
+      }
+      return supertest(app)
+        .post(`/bookmarks`)
+        .send(newBookmark)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(201)
+        .expect(res => {
+          expect(res.body.title).to.eql(newBookmark.title)
+          expect(res.body.url).to.eql(newBookmark.url)
+          expect(res.body.description).to.eql(newBookmark.description)
+          expect(res.body.rating).to.eql(newBookmark.rating)
+          expect(res.body.id).to.be.a('string')
+        })
+        .then(res => {
+          expect(store.bookmarks[store.bookmarks.length - 1]).to.eql(res.body)
+        })
+    })
+  })
+})
